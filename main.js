@@ -76,10 +76,14 @@ processLineByLine().then()
 // TODO: get data from links https://github.com/puppeteer/puppeteer
 // https://www.youtube.com/watch?v=lgyszZhAZOI&ab_channel=LearnWebCode
 // TODO: to share
+// * js Date XD
 // new Date('http://siadamgadampelenserwis.pl:8501/')
 // Sat Jan 01 8501 00:00:00 GMT+0100 (Central European Standard Time)
 // new Date('https://openai.com/dall-e-2/')
 // Thu Feb 01 2001 00:00:00 GMT+0100 (Central European Standard Time)
+// * Take GitHub to the command line
+// GitHub CLI brings GitHub to your terminal. Free and open source
+// https://cli.github.com/
 // TODO: js vs python
 // append vs push
 // a++ vs a += 1
