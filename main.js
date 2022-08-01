@@ -73,6 +73,8 @@ async function processLineByLine() {
 
 processLineByLine().then()
 
+// TODO: get data from links https://github.com/puppeteer/puppeteer
+// https://www.youtube.com/watch?v=lgyszZhAZOI&ab_channel=LearnWebCode
 // TODO: to share
 // new Date('http://siadamgadampelenserwis.pl:8501/')
 // Sat Jan 01 8501 00:00:00 GMT+0100 (Central European Standard Time)
