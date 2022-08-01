@@ -10,7 +10,7 @@ function isDate(line) {
 }
 
 function isEmpty(line) {
-    return line.trim() !== ''
+    return line.trim() === ''
 }
 
 function createFile(name, links) {
@@ -23,6 +23,15 @@ function createFile(name, links) {
 
 function isLink(line) {
     return line.trim().includes('http')
+}
+
+function getDate(line) {
+    let temp = line.trim().split('-')
+    return `${temp[0]}-${temp[1]}`
+}
+
+function isNewMonth(old = '', date) {
+    return getDate(date) !== old
 }
 
 async function processLineByLine() {
@@ -40,14 +49,14 @@ async function processLineByLine() {
         let links = []
         let date = ''
         for await (const line of lines) {
-            if (isEmpty(line)) {
-                if (isDate(line) && !isLink(line)) {
+            if (!isEmpty(line)) {
+                if (isDate(line) && !isLink(line) && isNewMonth(date, line)) {
                     filesNumber++
                     if (links.length > 0) {
                         createFile(date, links)
                         links = []
                     }
-                    date = line.trim()
+                    date = getDate(line)
                 } else {
                     links.push(line)
                 }
@@ -64,7 +73,6 @@ async function processLineByLine() {
 
 processLineByLine().then()
 
-// TODO: monthly links about code&fun
 // TODO: to share
 // new Date('http://siadamgadampelenserwis.pl:8501/')
 // Sat Jan 01 8501 00:00:00 GMT+0100 (Central European Standard Time)
