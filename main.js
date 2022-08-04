@@ -130,6 +130,7 @@ processLineByLine().then()
 
 // TODO: get data from links https://github.com/puppeteer/puppeteer
 // https://www.youtube.com/watch?v=lgyszZhAZOI&ab_channel=LearnWebCode
+// TODO: stackoverflow get text from link
 // TODO: to share
 // * js Date XD
 // new Date('http://siadamgadampelenserwis.pl:8501/')
@@ -143,3 +144,4 @@ processLineByLine().then()
 // append vs push
 // a++ vs a += 1
 // function vs def
+// filter, map, reduce
