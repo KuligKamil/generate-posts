@@ -2,6 +2,7 @@ const fs = require('fs')
 const path = '../kuligkamil.github.io/_posts/';
 const file = '2022-08-04-code-fun-old.md';
 const readline = require('readline');
+const puppeteer = require('puppeteer');
 
 function isDate(line) {
     let date = new Date(line.trim())
@@ -34,8 +35,21 @@ function isNewMonth(old = '', date) {
     return getDate(date) !== old
 }
 
+
+function getDescriptions(document) {
+    let descriptionProperties = ['og:description', 'twitter:description', 'description']
+    for (let descriptionProperty in descriptionProperties) {
+        descriptionProperty = document.querySelectorAll(`meta[property=\"${descriptionProperty}\"]`)
+        if (descriptionProperty !== null) {
+            return descriptionProperty.content
+        }
+    }
+}
+
 async function processLineByLine() {
     try {
+        const browser = await puppeteer.launch({headless: false})
+        let page
         console.log('Code&Fun')
         const fileStream = fs.createReadStream(`${path}${file}`)
         const lines = readline.createInterface({
@@ -58,6 +72,47 @@ async function processLineByLine() {
                     }
                     date = getDate(line)
                 } else {
+                    if (isLink(line)) {
+                        page = await browser.newPage();
+                        await page.goto(line, {waitUntil: 'networkidle2'})
+                        // const desc = getDescriptions()
+                        // console.log(desc)
+                        let list = await page.evaluate(() =>
+                            // {
+                            //     let descriptionProperties = ['og:description', 'twitter:description', 'description']
+                            //     for (let descriptionProperty in descriptionProperties) {
+                            //         descriptionProperty = document.querySelectorAll(`meta[property=\"${descriptionProperty}\"]`)
+                            //
+                            //         if (descriptionProperty !== null) {
+                            //             return descriptionProperty.content
+                            //         }
+                            //     }
+                            // })
+                            //
+                            Array.from(document.querySelectorAll('meta'),
+                                (e) => {
+                                    if (e.getAttributeNames().includes('property')) {
+                                        if (e.getAttribute('property').includes('desc')) {
+                                            return e.content
+                                        }
+                                    }
+                                    if (e.getAttributeNames().includes('name')) {
+                                        if (e.getAttribute('name').includes('desc')) {
+                                            return e.content
+                                        }
+                                    }
+                                }))
+                        //
+                        // // const descriptionTag = await page.$('meta[name="description"]')
+                        // // let a = 7
+                        // // const description = await descriptionTag?.getAttribute('content')
+                        list = list.filter(a => a !== null)
+                        console.log(list[0])
+                        desc = list.sort(function (a, b) {
+                            return b.length - a.length
+                        })[0];
+                        console.log(desc)
+                    }
                     links.push(line)
                 }
                 linesNumber++
