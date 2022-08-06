@@ -10,20 +10,38 @@ function isDate(line) {
     return date.toString() !== 'Invalid Date'
 }
 
+function isBook(line) {
+    return line.trim().slice(-4) === '.pdf'
+}
+
 function isEmpty(line) {
     return line.trim() === ''
 }
 
-function createFile(name, links) {
-    // console.log(name, links.length)
-    console.log(`# ${name} \n`)
+function createFile(name, links, filesNumber) {
+    const file = `${path}${name}-01-code-and-fun-${filesNumber}.md`
+    const header = `# Code and Fun \\#${filesNumber}\n` +
+        '\n' +
+        'Every Tuesday, I meet with my colleagues to Code&Fun. This is a monthly links collection. \n' +
+        '\n' +
+        'Code&Fun:\n' +
+        '\n' +
+        '* share code, code snippets - not only from work,\n' +
+        '* brainstorming problems,\n' +
+        '* share good practices,\n' +
+        '* highlights from code reviews,\n' +
+        '* share interesting articles & repositories.\n\n' +
+        '---\n\n'
+    let body = ''
+    let index = 1
     for (let url in links) {
-        console.log(`* ${url} \n ${links[url]} \n\n`)
+        body += `${index}. ${links[url]}  \n[${url}](${url})\n`
+        index++
     }
-    // fs.writeFile('', 'Learn Node FS module', function (err) {
-    //     if (err) throw err;
-    //     console.log('File is created successfully.');
-    // });
+    fs.writeFile(file, header + body, function (err) {
+        if (err) throw err;
+        console.log('File is created successfully.');
+    });
 }
 
 function isLink(line) {
@@ -55,7 +73,7 @@ async function processLineByLine() {
         const browser = await puppeteer.launch({headless: false})
         let page
         let linesNumber = 0
-        let filesNumber = 0
+        let filesNumber = 1
         let links = {}
         let date = ''
         const fileStream = fs.createReadStream(`${path}${file}`)
@@ -67,31 +85,39 @@ async function processLineByLine() {
         })
         for await (const line of lines) {
             if (!isEmpty(line)) {
-
                 if (isDate(line) && !isLink(line) && isNewMonth(date, line)) {
-                    filesNumber++
                     if (Object.keys(links).length > 0) {
-                        createFile(date, links)
+                        createFile(date, links, filesNumber)
                         links = []
                     }
                     date = getDate(line)
+                    filesNumber++
                 } else if (isDate(line) && !isNewMonth(date, line)) {
                     continue
                 } else {
                     let title = ''
                     if (isLink(line)) {
-                        page = await browser.newPage();
-                        await page.goto(line, {waitUntil: 'networkidle2'})
-                        title = await page.title()
-                        // console.log('title', title)
+                        if (isBook(line)) {
+                            links[line] = ''
+                        } else {
+                            page = await browser.newPage()
+                            try {
+                                await page.goto(line, {waitUntil: 'networkidle2'})
+                                title = await page.title()
+                                await page.close()
+                            } catch (e) {
+                                title = ''
+                            }
+                            // ECMAScript 2021
+                            // title = title.replaceAll('|', '\|')
+                            links[line] = title.replace(/\|/g, "\\|")
+                        }
                     }
-                    links[line] = title
-                    // links.push({[line]: title})
                 }
                 linesNumber++
             }
         }
-        createFile(date, links)
+        createFile(date, links, filesNumber)
         // console.log(linesNumber)
         // console.log(filesNumber)
     } catch (e) {
