@@ -4,19 +4,7 @@ const file = '2022-08-04-code-fun-old.md'
 const readline = require('readline')
 const puppeteer = require('puppeteer')
 
-function isDate(line) {
-    let date = new Date(line.trim())
-    // console.log(typeof date)
-    return date.toString() !== 'Invalid Date'
-}
-
-function isBook(line) {
-    return line.trim().slice(-4) === '.pdf'
-}
-
-function isEmpty(line) {
-    return line.trim() === ''
-}
+import {getDate, isBook, isDate, isEmpty, isLink, isNewMonth} from "utils";
 
 function createFile(name, links, filesNumber) {
     const file = `${path}${name}-01-code-and-fun-${filesNumber}.md`
@@ -44,89 +32,67 @@ function createFile(name, links, filesNumber) {
     });
 }
 
-function isLink(line) {
-    return line.trim().includes('http')
-}
-
-function getDate(line) {
-    let temp = line.trim().split('-')
-    return `${temp[0]}-${temp[1]}`
-}
-
-function isNewMonth(old = '', date) {
-    return getDate(date) !== old
-}
-
-
-function getDescriptions(document) {
-    let descriptionProperties = ['og:description', 'twitter:description', 'description']
-    for (let descriptionProperty in descriptionProperties) {
-        descriptionProperty = document.querySelectorAll(`meta[property=\"${descriptionProperty}\"]`)
-        if (descriptionProperty !== null) {
-            return descriptionProperty.content
-        }
-    }
-}
 
 async function processLineByLine() {
-    try {
-        const browser = await puppeteer.launch({headless: false})
-        let page
-        let linesNumber = 0
-        let filesNumber = 1
-        let links = {}
-        let date = ''
-        const fileStream = fs.createReadStream(`${path}${file}`)
-        const lines = readline.createInterface({
-            input: fileStream,
-            crlfDelay: Infinity
-            // Note: we use the crlfDelay option to recognize all instances of CR LF
-            // ('\r\n') in input.txt as a single line break.
-        })
-        for await (const line of lines) {
-            if (!isEmpty(line)) {
-                if (isDate(line) && !isLink(line) && isNewMonth(date, line)) {
+    const browser = await puppeteer.launch({headless: false})
+    let page
+    let linesNumber = 0
+    let filesNumber = 1
+    let links = {}
+    let date = ''
+    const fileStream = fs.createReadStream(`${path}${file}`)
+    const lines = readline.createInterface({
+        input: fileStream,
+        crlfDelay: Infinity
+        // Note: we use the crlfDelay option to recognize all instances of CR LF
+        // ('\r\n') in input.txt as a single line break.
+    })
+    for await (const line of lines) {
+        if (!isEmpty(line)) {
+            if (isDate(line) && !isLink(line)) {
+                const newDate = getDate(line)
+                if (isNewMonth(date, newDate)) {
                     if (Object.keys(links).length > 0) {
                         createFile(date, links, filesNumber)
                         links = []
                     }
-                    date = getDate(line)
+                    date = newDate
                     filesNumber++
-                } else if (isDate(line) && !isNewMonth(date, line)) {
-                    continue
-                } else {
-                    let title = ''
-                    if (isLink(line)) {
-                        if (isBook(line)) {
-                            links[line] = ''
-                        } else {
-                            page = await browser.newPage()
-                            try {
-                                await page.goto(line, {waitUntil: 'networkidle2'})
-                                title = await page.title()
-                                await page.close()
-                            } catch (e) {
-                                title = ''
-                            }
-                            // ECMAScript 2021
-                            // title = title.replaceAll('|', '\|')
-                            links[line] = title.replace(/\|/g, "\\|")
+                }
+            } else {
+                let title = ''
+                if (isLink(line)) {
+                    if (isBook(line)) {
+                        links[line] = ''
+                    } else {
+                        page = await browser.newPage()
+                        try {
+                            await page.goto(line, {waitUntil: 'networkidle2'})
+                            title = await page.title()
+                            await page.close()
+                        } catch (e) {
+                            title = ''
                         }
+                        // ECMAScript 2021
+                        // title = title.replaceAll('|', '\|')
+                        links[line] = title.replace(/\|/g, "\\|")
                     }
                 }
-                linesNumber++
             }
+            linesNumber++
         }
-        createFile(date, links, filesNumber)
-        // console.log(linesNumber)
-        // console.log(filesNumber)
-    } catch (e) {
-        console.log(e)
     }
+    createFile(date, links, filesNumber)
+    // console.log(linesNumber)
+    // console.log(filesNumber)
+
 }
 
-processLineByLine().then()
-
+try {
+    processLineByLine().then()
+} catch (e) {
+    console.log(e)
+}
 // TODO: get data from links https://github.com/puppeteer/puppeteer
 // https://www.youtube.com/watch?v=lgyszZhAZOI&ab_channel=LearnWebCode
 // TODO: stackoverflow get text from link
@@ -145,6 +111,8 @@ processLineByLine().then()
 // https://ziglang.org/
 // https://nixos.org/
 // * [line] <- brackets, using variable as a key
+// cli echo -e "line1\nline2\nline3\n" > msg
+// export msg=$(cat msg) ; gh create pr -b "$msg"
 // TODO: js vs python
 // append vs push
 // a++ vs a += 1
